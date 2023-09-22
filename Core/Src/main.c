@@ -25,10 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usbd_cdc_if.h"
 #include "mlx90640_adapter.h"
 #include "common.h"
-#include "stm32f4xx_hal_fmpi2c.h"
-#include "stm32f4xx_hal_fmpi2c_ex.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,7 +37,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define count_of (sizeof(a) / sizeof(a[0]))
+#define USB_DATA_LEN (MLX90640_PIXEL_NUM * 2 + 2)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,7 +49,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static float thermal_data[MLX90640_PIXEL_NUM];
+static float g_thermal_data[MLX90640_PIXEL_NUM];
+static uint8_t g_usb_data[MLX90640_PIXEL_NUM * 2 + 2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,47 +117,37 @@ int main(void)
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
 	uint32_t start;
-	  //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-	  //HAL_Delay(500);
-	  //HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-	  //HAL_Delay(1000);
+	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	//HAL_Delay(500);
+	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+	//HAL_Delay(1000);
 
 	//start = HAL_GetTick();
-	mlx_data_read(thermal_data);
+	HAL_Delay(5000);
+	mlx_data_read(g_thermal_data);
 	//pinfo("read frame: %d\r\n", HAL_GetTick() - start);
 	printf("=================== %d ======================\r\n", cnt++);
 	for (int i = 12; i < 13; i++) {
 	  for (int j = 0; j < MLX90640_COLUMN_NUM; j++) {
-		printf("%2.2f ", thermal_data[i * MLX90640_COLUMN_NUM + j]);
+		printf("%02.2f ", g_thermal_data[i * MLX90640_COLUMN_NUM + j]);
 	  }
       printf("\r\n");
 	}
 	printf("=========================================\r\n");
 
-	/*
-	float a = 34.27;
-	float b;
+	for (int i = 0; i < MLX90640_PIXEL_NUM; i++) {
+		int16_t data = (int16_t)(g_thermal_data[i] * 100);
 
-	start = HAL_GetTick();
-	for (int i = 0; i < 100000; i++) {
-		b = sqrtf(a);
+		g_usb_data[2 * i] = (uint8_t)((uint16_t)data >> 8);
+		g_usb_data[2 * i + 1] = (uint8_t)data;
 	}
-	pinfo("sqrtf: %d\r\n", HAL_GetTick() - start);
-
+	g_usb_data[USB_DATA_LEN - 2] = 0x80;
+	g_usb_data[USB_DATA_LEN - 1] = 0;
 	start = HAL_GetTick();
-	for (int i = 0; i < 100000; i++) {
-		b = sqrt(a);
-	}
-	pinfo("sqrt: %d\r\n", HAL_GetTick() - start);
+	CDC_Transmit_FS(g_usb_data, sizeof(g_usb_data));
+	pinfo("send data: %d\r\n", HAL_GetTick() - start);
 
-	start = HAL_GetTick();
-	for (int i = 0; i < 100000; i++) {
-		arm_sqrt_f32(a, &b);
-	}
-	pinfo("arm sqrt: %d\r\n", HAL_GetTick() - start);
-
-	HAL_Delay(1000);
-	*/
+	while (1);
   }
   /* USER CODE END 3 */
 }

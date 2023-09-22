@@ -1,7 +1,0 @@
-../Core/Src/mlx90640_adapter.c:22:6:MLX90640_I2CInit	1
-../Core/Src/mlx90640_adapter.c:23:5:MLX90640_I2CGeneralReset	1
-../Core/Src/mlx90640_adapter.c:24:6:MLX90640_I2CFreqSet	1
-../Core/Src/mlx90640_adapter.c:26:5:MLX90640_I2CRead	3
-../Core/Src/mlx90640_adapter.c:48:5:MLX90640_I2CWrite	2
-../Core/Src/mlx90640_adapter.c:68:6:mlx_param_init	6
-../Core/Src/mlx90640_adapter.c:110:6:mlx_data_read	3
