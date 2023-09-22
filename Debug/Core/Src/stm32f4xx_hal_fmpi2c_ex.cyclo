@@ -1,0 +1,4 @@
+../Core/Src/stm32f4xx_hal_fmpi2c_ex.c:94:19:HAL_FMPI2CEx_ConfigAnalogFilter	3
+../Core/Src/stm32f4xx_hal_fmpi2c_ex.c:138:19:HAL_FMPI2CEx_ConfigDigitalFilter	3
+../Core/Src/stm32f4xx_hal_fmpi2c_ex.c:211:6:HAL_FMPI2CEx_EnableFastModePlus	1
+../Core/Src/stm32f4xx_hal_fmpi2c_ex.c:234:6:HAL_FMPI2CEx_DisableFastModePlus	1
