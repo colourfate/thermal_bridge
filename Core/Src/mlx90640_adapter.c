@@ -70,6 +70,8 @@ void mlx_param_init(void)
 	int status;
 	static uint16_t g_eeMLX90640[832];
 
+	MX_I2C1_Init();
+
 	status = MLX90640_SetRefreshRate(MLX90640_I2C_ADDR, FPS16HZ);
 	if (status != 0) {
 		perr("Set refresh rate failed\r\n");
@@ -121,20 +123,16 @@ void mlx_data_read(float data[MLX90640_PIXEL_NUM])
 		if (status < 0) {
 			perr("GetFrame Error: %d\r\n", status);
 		}
-		pinfo("get frame: %d\r\n", HAL_GetTick() - start);
+		pinfo("get frame: %ld\r\n", HAL_GetTick() - start);
 
-		//start = HAL_GetTick();
-		float vdd = MLX90640_GetVdd(g_mlx90640Frame, &g_mlx90640_param);
-		//pinfo("get vdd: %d\r\n", HAL_GetTick() - start);
 
-		//start = HAL_GetTick();
+		/* float vdd = MLX90640_GetVdd(g_mlx90640Frame, &g_mlx90640_param); */
 		float Ta = MLX90640_GetTa(g_mlx90640Frame, &g_mlx90640_param);
-		//pinfo("get ta: %d\r\n", HAL_GetTick() - start);
 
 		float tr = Ta - TA_SHIFT; //Reflected temperature based on the sensor ambient temperature
 		float emissivity = 0.95;
 		start = HAL_GetTick();
 		MLX90640_CalculateTo(g_mlx90640Frame, &g_mlx90640_param, emissivity, tr, data);
-		pinfo("calculate: %d\r\n", HAL_GetTick() - start);
+		pinfo("calculate: %ld\r\n", HAL_GetTick() - start);
 	}
 }

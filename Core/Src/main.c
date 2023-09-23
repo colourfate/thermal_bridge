@@ -25,8 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usbd_cdc_if.h"
 #include "mlx90640_adapter.h"
+#include "usb_data_transfer.h"
 #include "common.h"
 /* USER CODE END Includes */
 
@@ -37,8 +37,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define count_of (sizeof(a) / sizeof(a[0]))
-#define USB_DATA_LEN (MLX90640_PIXEL_NUM * 2 + 2)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,7 +48,6 @@
 
 /* USER CODE BEGIN PV */
 static float g_thermal_data[MLX90640_PIXEL_NUM];
-static uint8_t g_usb_data[MLX90640_PIXEL_NUM * 2 + 2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -82,6 +79,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   uint32_t cnt = 0;
+  uint8_t len_status = GPIO_PIN_RESET;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -116,17 +114,10 @@ int main(void)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
-	uint32_t start;
-	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-	//HAL_Delay(500);
-	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-	//HAL_Delay(1000);
+	int ret;
 
-	//start = HAL_GetTick();
-	HAL_Delay(5000);
 	mlx_data_read(g_thermal_data);
-	//pinfo("read frame: %d\r\n", HAL_GetTick() - start);
-	printf("=================== %d ======================\r\n", cnt++);
+	printf("=================== %ld ======================\r\n", cnt++);
 	for (int i = 12; i < 13; i++) {
 	  for (int j = 0; j < MLX90640_COLUMN_NUM; j++) {
 		printf("%02.2f ", g_thermal_data[i * MLX90640_COLUMN_NUM + j]);
@@ -135,19 +126,15 @@ int main(void)
 	}
 	printf("=========================================\r\n");
 
-	for (int i = 0; i < MLX90640_PIXEL_NUM; i++) {
-		int16_t data = (int16_t)(g_thermal_data[i] * 100);
-
-		g_usb_data[2 * i] = (uint8_t)((uint16_t)data >> 8);
-		g_usb_data[2 * i + 1] = (uint8_t)data;
+	ret = usb_data_store_f(g_thermal_data, count_of(g_thermal_data));
+	if (ret != 0) {
+	  return ret;
 	}
-	g_usb_data[USB_DATA_LEN - 2] = 0x80;
-	g_usb_data[USB_DATA_LEN - 1] = 0;
-	start = HAL_GetTick();
-	CDC_Transmit_FS(g_usb_data, sizeof(g_usb_data));
-	pinfo("send data: %d\r\n", HAL_GetTick() - start);
+	usb_data_send();
 
-	while (1);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, len_status);
+	len_status = (len_status == GPIO_PIN_RESET ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
