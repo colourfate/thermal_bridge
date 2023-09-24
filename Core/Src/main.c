@@ -79,7 +79,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   uint32_t cnt = 0;
-  uint8_t len_status = GPIO_PIN_RESET;
+  uint8_t fast_mode = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -113,6 +113,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
 	int ret;
 
@@ -132,9 +133,19 @@ int main(void)
 	}
 	usb_data_send();
 
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, len_status);
-	len_status = (len_status == GPIO_PIN_RESET ? GPIO_PIN_SET : GPIO_PIN_RESET);
-	HAL_Delay(1000);
+	if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET) {
+		while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) != GPIO_PIN_SET) {
+			HAL_Delay(1);
+		}
+		fast_mode = (fast_mode == 0 ? 1 : 0);
+	}
+
+	if (fast_mode == 1) {
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+		HAL_Delay(1000);
+	}
   }
   /* USER CODE END 3 */
 }
