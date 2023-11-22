@@ -79,7 +79,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   uint32_t cnt = 0;
-  uint8_t fast_mode = 0;
+  uint8_t fast_mode = 1;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -118,6 +118,8 @@ int main(void)
 	int ret;
 
 	mlx_data_read(g_thermal_data);
+
+#ifdef DEBUG
 	printf("=================== %ld ======================\r\n", cnt++);
 	for (int i = 12; i < 13; i++) {
 	  for (int j = 0; j < MLX90640_COLUMN_NUM; j++) {
@@ -126,6 +128,7 @@ int main(void)
       printf("\r\n");
 	}
 	printf("=========================================\r\n");
+#endif
 
 	ret = usb_data_store_f(g_thermal_data, count_of(g_thermal_data));
 	if (ret != 0) {
