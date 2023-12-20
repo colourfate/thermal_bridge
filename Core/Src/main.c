@@ -105,7 +105,8 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   mlx_param_init();
-  printf("mlx init ok\r\n");
+  praw("mlx init ok\r\n");
+  usb_transfer_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -116,18 +117,27 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	int ret;
+	usb_control_cmd usb_cmd;
+
+	ret = usb_get_cmd(&usb_cmd);
+	if (ret > 0) {
+		perr("usb cmd: type(%d), fps(%d)", usb_cmd.type, usb_cmd.fps);
+		if (usb_cmd.type == USB_DATA_TYPE_CMD_FPS) {
+			(void)mlx_set_refresh_rate(usb_cmd.fps);
+		}
+	}
 
 	mlx_data_read(g_thermal_data);
 
-#ifdef DEBUG
-	printf("=================== %ld ======================\r\n", cnt++);
+#if 0
+	praw("=================== %ld ======================\r\n", cnt++);
 	for (int i = 12; i < 13; i++) {
 	  for (int j = 0; j < MLX90640_COLUMN_NUM; j++) {
-		printf("%02.2f ", g_thermal_data[i * MLX90640_COLUMN_NUM + j]);
+		praw("%02.2f ", g_thermal_data[i * MLX90640_COLUMN_NUM + j]);
 	  }
-      printf("\r\n");
+      praw("\r\n");
 	}
-	printf("=========================================\r\n");
+	praw("=========================================\r\n");
 #endif
 
 	ret = usb_data_store_f(g_thermal_data, count_of(g_thermal_data));

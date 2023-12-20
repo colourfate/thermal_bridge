@@ -11,7 +11,7 @@
 #define MLX90640_I2C_ADDR 0x33
 #define TA_SHIFT 8
 
-enum REFRESHRATE{
+enum REFRESHRATE {
 	FPS2HZ = 0x02,
 	FPS4HZ = 0x03,
 	FPS8HZ = 0x04,
@@ -135,4 +135,27 @@ void mlx_data_read(float data[MLX90640_PIXEL_NUM])
 		MLX90640_CalculateTo(g_mlx90640Frame, &g_mlx90640_param, emissivity, tr, data);
 		pinfo("calculate: %ld\r\n", HAL_GetTick() - start);
 	}
+}
+
+int mlx_set_refresh_rate(uint32_t fps)
+{
+	enum REFRESHRATE refresh_cfg;
+	int status;
+
+	if (fps == 8) {
+		refresh_cfg = FPS8HZ;
+	} else if (fps == 16) {
+		refresh_cfg = FPS16HZ;
+	} else {
+		perr("Not support fps: %d\r\n", fps);
+		return -1;
+	}
+
+	status = MLX90640_SetRefreshRate(MLX90640_I2C_ADDR, refresh_cfg);
+	if (status != 0) {
+		perr("Set refresh rate failed: %d\r\n", status);
+		return -1;
+	}
+
+	return 0;
 }
