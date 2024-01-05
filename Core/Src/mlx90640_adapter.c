@@ -142,15 +142,16 @@ int mlx_set_refresh_rate(uint32_t fps)
 	enum REFRESHRATE refresh_cfg;
 	int status;
 
-	if (fps == 8) {
+	if (fps == 4) {
 		refresh_cfg = FPS8HZ;
-	} else if (fps == 16) {
+	} else if (fps == 8) {
 		refresh_cfg = FPS16HZ;
 	} else {
 		perr("Not support fps: %d\r\n", fps);
 		return -1;
 	}
 
+	// Subpage fresh rate
 	status = MLX90640_SetRefreshRate(MLX90640_I2C_ADDR, refresh_cfg);
 	if (status != 0) {
 		perr("Set refresh rate failed: %d\r\n", status);
