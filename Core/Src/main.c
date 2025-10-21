@@ -78,8 +78,8 @@ PUTCHAR_PROTOTYPE
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint32_t cnt = 0;
   uint8_t fast_mode = 1;
+  usb_control_cmd usb_cmd;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -105,60 +105,65 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   mlx_param_init();
-  praw("mlx init ok\r\n");
   usb_transfer_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  //praw("mlx init ok\r\n");
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  while (usb_get_cmd(&usb_cmd) == 0 || usb_cmd.type != USB_CMD_START) {
+    pinfo("wait for start cmd\r\n");
+    HAL_Delay(100);
+  }
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	int ret;
-	usb_control_cmd usb_cmd;
+  int ret;
 
-	ret = usb_get_cmd(&usb_cmd);
-	if (ret > 0) {
-		perr("usb cmd: type(%d), fps(%d)", usb_cmd.type, usb_cmd.fps);
-		if (usb_cmd.type == USB_DATA_TYPE_CMD_FPS) {
-			(void)mlx_set_refresh_rate(usb_cmd.fps);
-		}
-	}
+  ret = usb_get_cmd(&usb_cmd);
+  if (ret > 0) {
+    //perr("usb cmd: type(%d), fps(%d)\r\n", usb_cmd.type, usb_cmd.fps);
+    if (usb_cmd.type == USB_CMD_FPS) {
+      (void)mlx_set_refresh_rate(usb_cmd.fps);
+    }
+  }
 
-	mlx_data_read(g_thermal_data);
+  mlx_data_read(g_thermal_data);
 
 #if 0
-	praw("=================== %ld ======================\r\n", cnt++);
-	for (int i = 12; i < 13; i++) {
-	  for (int j = 0; j < MLX90640_COLUMN_NUM; j++) {
-		praw("%02.2f ", g_thermal_data[i * MLX90640_COLUMN_NUM + j]);
-	  }
+  praw("=================== %ld ======================\r\n", cnt++);
+  for (int i = 12; i < 13; i++) {
+    for (int j = 0; j < MLX90640_COLUMN_NUM; j++) {
+    praw("%02.2f ", g_thermal_data[i * MLX90640_COLUMN_NUM + j]);
+    }
       praw("\r\n");
-	}
-	praw("=========================================\r\n");
+  }
+  praw("=========================================\r\n");
 #endif
 
-	ret = usb_data_store_f(g_thermal_data, count_of(g_thermal_data));
-	if (ret != 0) {
-	  return ret;
-	}
-	usb_data_send();
+  ret = usb_data_store_f(g_thermal_data, count_of(g_thermal_data));
+  if (ret != 0) {
+    return ret;
+  }
+  usb_data_send();
 
-	if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET) {
-		while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) != GPIO_PIN_SET) {
-			HAL_Delay(1);
-		}
-		fast_mode = (fast_mode == 0 ? 1 : 0);
-	}
+  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET) {
+    while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) != GPIO_PIN_SET) {
+      HAL_Delay(1);
+    }
+    fast_mode = (fast_mode == 0 ? 1 : 0);
+  }
 
-	if (fast_mode == 1) {
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-	} else {
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-		HAL_Delay(1000);
-	}
+  if (fast_mode == 1) {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  } else {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+    HAL_Delay(1000);
+  }
   }
   /* USER CODE END 3 */
 }

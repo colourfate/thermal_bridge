@@ -30,17 +30,25 @@ static void receive_data_parse(uint8_t* buf, uint32_t len)
 
 	packet = (usb_data_format *)buf;
 	if (packet->header != USB_DATA_HEAD || packet->type >= USB_DATA_TYPE_MAX || packet->len == 0) {
-		perr("get packet: header(%d), type(%d), len(%d)\r\n", packet->header, packet->type, packet->len);
+		perr("get packet error\n");
 		return;
 	}
 
+	// 可能有并发问题
 	memset(&g_usb_cmd, 0, sizeof(usb_control_cmd));
-	g_usb_cmd.type = packet->type;
-	if (packet->type == USB_DATA_TYPE_CMD_FPS && packet->len == 1) {
-		g_usb_cmd.fps = packet->data[0];
+	if (packet->type == USB_DATA_TYPE_CMD) {
+		g_usb_cmd.type = packet->data[0];
+		if (g_usb_cmd.type == USB_CMD_FPS && packet->len == 2) {
+			g_usb_cmd.fps = packet->data[1];
+		} else if (g_usb_cmd.type == USB_CMD_START && packet->len == 1) {
+			// do nothing
+		} else {
+			perr("Not support cmd\n");
+			return;
+		}
 	} else {
-		perr("Not support packet: type(%d), len(%d)\r\n", packet->type, packet->len);
-	    return;
+		perr("Not support packet\n");
+		return;
 	}
 
 	g_receive_ok = 1;
@@ -73,12 +81,29 @@ int usb_data_store_f(float *data, uint32_t data_len)
 	return 0;
 }
 
+static void usb_cdc_transmit(uint8_t *buf, uint32_t len)
+{
+	/*
+	uint32_t send_cnt = len / CDC_DATA_FS_MAX_PACKET_SIZE;
+	uint32_t last_byte = len % CDC_DATA_FS_MAX_PACKET_SIZE;
+
+	for (uint32_t i = 0; i < send_cnt; i++) {
+		while (CDC_Transmit_FS(buf + i * CDC_DATA_FS_MAX_PACKET_SIZE, CDC_DATA_FS_MAX_PACKET_SIZE) != USBD_OK);
+	}
+
+	if (last_byte > 0) {
+		while (CDC_Transmit_FS(buf + send_cnt * CDC_DATA_FS_MAX_PACKET_SIZE, last_byte) != USBD_OK);
+	}
+	*/
+	while (CDC_Transmit_FS(buf, len) != USBD_OK);
+}
+
 void usb_data_send(void)
 {
 	uint32_t start;
 
 	start = HAL_GetTick();
-	while (CDC_Transmit_FS((uint8_t *)g_packet, g_packet->len + sizeof(usb_data_format)) != USBD_OK);
+	usb_cdc_transmit((uint8_t *)g_packet, g_packet->len + sizeof(usb_data_format));
 	pinfo("send data: %ld\r\n", HAL_GetTick() - start);
 }
 
@@ -123,6 +148,6 @@ void usb_printf(const char *format, ...)
     //packet->len = 5;
     //strcpy(packet->data, "hello");
     /* blocking send */
-    while (CDC_Transmit_FS(raw_data, packet->len + sizeof(usb_data_format)) != USBD_OK);
+    usb_cdc_transmit(raw_data, packet->len + sizeof(usb_data_format));
     //CDC_Transmit_FS("hello", 5);
 }

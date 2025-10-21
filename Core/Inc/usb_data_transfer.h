@@ -11,17 +11,25 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define USB_CMD_DATA_MAX 16
+
 typedef enum {
-	USB_DATA_TYPE_CMD_FPS,
+	USB_DATA_TYPE_CMD,
 	USB_DATA_TYPE_DATA,
 	USB_DATA_TYPE_LOG,
 	USB_DATA_TYPE_MAX
 } usb_data_type;
 
+typedef enum {
+	USB_CMD_START,
+	USB_CMD_FPS,
+	USB_CMD_TYPE_MAX
+} usb_cmd_type;
+
 typedef struct {
-	usb_data_type type;
+	usb_cmd_type type;
 	union {
-		uint32_t fps;
+		uint8_t fps;
 	};
 } usb_control_cmd;
 
